@@ -18,11 +18,28 @@
                     <span class="font-medium">Инженер QA:</span>
                     <p class="mt-1">{{ $report['инженер_QA'] ?? 'Не указано' }}</p>
                 </div>
-                <div>
+                <div class="flex items-center space-x-2">
                     <span class="font-medium">Итоговая оценка:</span>
-                    <p class="mt-1 font-semibold {{ $report['итоговая_оценка'] == 'УДОВЛЕТВОРИТЕЛЬНО' ? 'text-yellow-600' : 'text-green-600' }}">
-                        {{ $report['итоговая_оценка'] ?? 'Не указано' }}
-                    </p>
+                    @php
+                        $rating = $report['итоговая_оценка'] ?? 'Не указано';
+
+                        if ($rating == 'ОТЛИЧНО' || $rating == 'ХОРОШО') {
+                            $colorClass = 'text-green-600 bg-green-100';
+                            $icon = '✅';
+                        } elseif ($rating == 'УДОВЛЕТВОРИТЕЛЬНО') {
+                            $colorClass = 'text-yellow-600 bg-yellow-100';
+                            $icon = '⚠️';
+                        } elseif ($rating == 'ПЛОХО' || $rating == 'НЕУДОВЛЕТВОРИТЕЛЬНО') {
+                            $colorClass = 'text-red-600 bg-red-100';
+                            $icon = '❌';
+                        } else {
+                            $colorClass = 'text-gray-600 bg-gray-100';
+                            $icon = '❓';
+                        }
+                    @endphp
+                    <span class="px-3 py-1 rounded-full text-sm font-semibold {{ $colorClass }}">
+                        {{ $icon }} {{ $rating }}
+                    </span>
                 </div>
             </div>
         </div>

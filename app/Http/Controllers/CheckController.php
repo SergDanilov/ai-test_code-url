@@ -6,13 +6,28 @@ use App\Models\Check;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use App\Helpers\UrlHelper;
+use App\Helpers\ExtractRatingHelper;
 
 class CheckController extends Controller
 {
-    public function index()
+    public function __construct()
     {
-        $checks = Check::latest()->get();
-        return view('checks.index', compact('checks'));
+        $this->middleware('auth');
+    }
+
+    public function index(Request $request)
+    {
+        $query = Check::query();
+
+        if ($request->has('site') && $request->site != '') {
+            $query->where('site', $request->site);
+        }
+
+        $checks = $query->latest()->paginate(20); // 20 записей на страницу
+        $sites = Check::select('site')->distinct()->whereNotNull('site')->pluck('site');
+
+        return view('checks.index', compact('checks', 'sites'));
     }
 
     public function create()
@@ -40,19 +55,27 @@ class CheckController extends Controller
                 $queryParams['tz'] = $request->tz;
             }
 
+            // Извлекаем домен из URL
+            $site = UrlHelper::extractDomain($request->url);
+
             // Выполняем запрос к API с авторизацией
             $response = Http::timeout(600)
                 ->withBasicAuth('orwo', '987654321') // Добавляем авторизацию
                 ->get($apiUrl, $queryParams);
 
+            // Парсим ответ чтобы извлечь оценку
+            $rating = ExtractRatingHelper::extractRatingFromResponse($response->body());
+
             // Сохраняем результат
             $check = Check::create([
                 'name' => $request->name,
                 'url' => $request->url,
+                'site' => $site,
                 'tz' => $request->tz,
                 'response' => $response->body(),
                 'status_code' => $response->status(),
                 'success' => $response->successful(),
+                'rating' => $rating,
             ]);
 
             return redirect()->route('checks.index')
@@ -61,14 +84,19 @@ class CheckController extends Controller
         } catch (\Exception $e) {
             Log::error('API check failed: ' . $e->getMessage());
 
+            // Извлекаем домен даже при ошибке
+            $site = UrlHelper::extractDomain($request->url);
+
             // Сохраняем проверку с ошибкой
             Check::create([
                 'name' => $request->name,
                 'url' => $request->url,
+                'site' => $site,
                 'tz' => $request->tz,
                 'response' => $e->getMessage(),
                 'status_code' => 500,
                 'success' => false,
+                'rating' => null, // при ошибке оценка null
             ]);
 
             return redirect()->route('checks.index')

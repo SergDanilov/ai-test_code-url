@@ -12,10 +12,12 @@ class Check extends Model
     protected $fillable = [
         'name',
         'url',
+        'site',
         'tz',
         'response',
         'status_code',
-        'success'
+        'success',
+        'rating'
     ];
 
     protected $casts = [

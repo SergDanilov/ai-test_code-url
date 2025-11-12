@@ -15,6 +15,10 @@
                 <h3 class="text-sm font-medium text-gray-500">Название</h3>
                 <p class="mt-1 text-sm text-gray-900">{{ $check->name }}</p>
             </div>
+            <div class="mb-4">
+                <h3 class="text-sm font-medium text-gray-500 mb-2">Сайт</h3>
+                <p class="text-sm text-gray-900 font-medium">{{ $check->site ?? '—' }}</p>
+            </div>
             <div>
                 <h3 class="text-sm font-medium text-gray-500">Статус</h3>
                 <p class="mt-1">
